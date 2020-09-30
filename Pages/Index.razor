@@ -1,0 +1,68 @@
+﻿@page "/"
+@inject HttpClient Http
+
+    <div style="max-width: 800px;margin: auto;">
+        <input @oninput="OnFilterChanged" value="@Filter" class="form-control" />
+
+        @if (filteredPokemon == null)
+        {
+            <p><em>Loading...</em></p>
+        }
+        else
+        {
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in filteredPokemon)
+                    {
+                        <tr>
+                            <td>@p.name.GetValueOrDefault("english", "")</td>
+                            <td>@String.Join(", ", @p.type)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+
+@code {
+    private string Filter = "";
+    private Pokemon[] pokemon;
+    private Pokemon[] filteredPokemon;
+
+    protected override async Task OnInitializedAsync()
+    {
+        pokemon = await Http.GetFromJsonAsync<Pokemon[]>("pokemon.json");
+        filteredPokemon = pokemon;
+    }
+
+    private Task OnFilterChanged(ChangeEventArgs e)
+    {
+        Filter = e.Value.ToString();
+
+        string lowerCaseFilter = Filter.ToLower();
+
+        filteredPokemon = pokemon.Where(p => p.name.GetValueOrDefault("english", "").ToLower().IndexOf(lowerCaseFilter) > -1).ToArray();
+
+        return Task.CompletedTask;
+    }
+
+    public class PokemonName
+    {
+        public string english;
+    }
+
+    public class Pokemon
+    {
+        public int id { get; set; }
+
+        public Dictionary<String, String> name { get; set; }
+
+        public string[] type { get; set; }
+    }
+}
